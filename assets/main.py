@@ -3,14 +3,12 @@ import json
 import os
 import random
 from datetime import datetime
-
 import numpy as np
 import torch
-
 from options.base_options import BaseOptions
 from trainer import trainer
 from utils import print_args
-
+import time
 
 def set_seed(args):
     torch.backends.cudnn.deterministic = True
@@ -27,6 +25,9 @@ def set_seed(args):
 
 
 def main(args):
+    start_time = time.time()  # Log start time
+    print(f"Script started at: {time.ctime(start_time)}")
+
     list_test_acc = []
     list_valid_acc = []
     list_train_loss = []
@@ -88,6 +89,15 @@ def main(args):
         list_valid_acc.append(valid_acc)
         list_train_loss.append(train_loss)
 
+        # Use default values for learning rate and weight decay if not specified
+        lr = args.lr if args.lr is not None else 0.001  # Default LR is 0.001
+        weight_decay = args.weight_decay if args.weight_decay is not None else 0.0  # Default weight decay is 0.0
+
+        # Save the trained model state for later soup interpolation
+        model_save_path = f"{args.type_model}_seed_{seed}_dataset_{args.dataset}_lr_{lr}_wd_{weight_decay}.pth"
+        torch.save(trnr.model.state_dict(), model_save_path)  # Save model weights
+        print(f"Model state saved at {model_save_path}")
+
         del trnr
         torch.cuda.empty_cache()
         gc.collect()
@@ -110,10 +120,17 @@ def main(args):
                 json.dump(to_save, f)
         except:
             pass
+
     print(
         "final mean and std of test acc: ",
         f"{np.mean(list_test_acc)*100:.4f} $\\pm$ {np.std(list_test_acc)*100:.4f}",
     )
+
+    end_time = time.time()  # Log end time
+    elapsed_time = end_time - start_time  # Calculate elapsed time
+    print(f"Script finished at: {time.ctime(end_time)}")
+    print(f"Elapsed time: {elapsed_time:.2f} seconds")  # Print elapsed time
+
     return np.mean(list_test_acc)
 
 
