@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import Linear
 from torch_geometric.data import Data
-from torch_geometric.loader.utils import filter_data, to_csc
+from torch_geometric.loader.utils import filter_data
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.typing import EdgeType, NodeType
 from torch_sparse import SparseTensor, matmul
@@ -14,10 +14,9 @@ from torch_sparse import SparseTensor, matmul
 from ._GraphSampling import _GraphSampling
 from .LayerWiseSampler import FastGCNSampler
 
-from utils import get_memory_usage, compute_tensor_bytes, MB, GB
+from assets.utils import get_memory_usage, compute_tensor_bytes, MB, GB
 import time
 import json
-
 
 class FASTConv(MessagePassing):
     """NOTE: Implemented from torch_geometric.nn.SAGEConv"""

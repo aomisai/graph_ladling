@@ -13,13 +13,13 @@ from torch import Tensor
 from torch._C import _init_names
 from torch.nn import Linear
 from torch_geometric.data import Data
-from torch_geometric.loader.utils import filter_data, to_csc
+# from torch_geometric.loader.utils import filter_data, to_csc
 from torch_geometric.nn import SAGEConv
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.typing import EdgeType, NodeType
 from torch_sparse import SparseTensor, matmul
 
-from utils import GB, MB, compute_tensor_bytes, get_memory_usage
+from assets.utils import GB, MB, compute_tensor_bytes, get_memory_usage
 
 from ._GraphSampling import _GraphSampling
 from .LayerWiseSampler import LADIESSampler

@@ -12,8 +12,8 @@ from torch_geometric.typing import OptPairTensor
 from torch_scatter import scatter
 from torch_sparse import SparseTensor, matmul
 
-import GraphSampling.cpp_extension.sample as sample
-from GraphSampling._GraphSampling import _GraphSampling
+import assets.GraphSampling.cpp_extension as sample
+from ._GraphSampling import _GraphSampling
 
 
 class GSConv(SAGEConv):
