@@ -101,10 +101,11 @@ def test_state_dicts(trainer_instance, state_dicts):
 
 
 # Function to load model state_dicts from files
-def load_model_files(model_files):
+def load_model_files(model_files, model_dir):
     state_dicts = []
     for model_file in model_files:
-        state_dict = torch.load(model_file)  # Load model weights
+        model_path = os.path.join(model_dir, model_file)  # Get full path to the model file
+        state_dict = torch.load(model_path)  # Load model weights
         state_dicts.append(state_dict)
     return state_dicts
 
@@ -165,8 +166,9 @@ def group_model_files(model_files):
 
 
 def main():
-    # Step 1: Get model files (assuming they are in the current directory)
-    model_files = [f for f in os.listdir() if f.endswith('.pth') and f.startswith('model')]
+    # Step 1: Get model files (assuming they are in the "trained_soup_ingredients" directory)
+    model_dir = "trained_soup_ingredients"
+    model_files = [f for f in os.listdir(model_dir) if f.endswith('.pth') and f.startswith('model')]
 
     if len(model_files) < 2:
         print("Need at least two model files to perform interpolation!")
@@ -188,7 +190,7 @@ def main():
     selected_group = list(grouped_files.items())[choice][1]
 
     # Load model state_dicts from the selected group of files
-    state_dicts = load_model_files(selected_group)
+    state_dicts = load_model_files(selected_group, model_dir)
 
     # Step 2: Initialize the args and trainer, load model and data just like main.py
     args = BaseOptions().initialize()  # Load the arguments like in main.py
@@ -222,6 +224,13 @@ def main():
     # Construct the filename with the model type and dataset
     souped_model_filename = f"final_soup_model_{model_type}_{dataset}.pth"
 
+    # Create the "completed_soups" directory if it doesn't exist
+    soups_dir = "completed_soups"
+    if not os.path.exists(soups_dir):
+        os.makedirs(soups_dir)
+
+    # Modify the save path to use the "completed_soups" directory
+    souped_model_filename = os.path.join(soups_dir, souped_model_filename)
     torch.save(final_soup, souped_model_filename)
     print(f"Final souped model saved as '{souped_model_filename}'")
 

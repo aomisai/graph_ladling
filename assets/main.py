@@ -94,7 +94,8 @@ def main(args):
         weight_decay = args.weight_decay if args.weight_decay is not None else 0.0  # Default weight decay is 0.0
 
         # Save the trained model state for later soup interpolation
-        model_save_path = f"{args.type_model}_seed_{seed}_dataset_{args.dataset}_lr_{lr}_wd_{weight_decay}.pth"
+        os.makedirs("trained_soup_ingredients", exist_ok=True)
+        model_save_path = f"trained_soup_ingredients/model_{args.type_model}_seed_{seed}_dataset_{args.dataset}_lr_{lr}_wd_{weight_decay}.pth"
         torch.save(trnr.model.state_dict(), model_save_path)  # Save model weights
         print(f"Model state saved at {model_save_path}")
 
