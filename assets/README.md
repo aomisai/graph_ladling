@@ -13,7 +13,10 @@ install pytorch following the instruction on [pytorch installation](https://pyto
 conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
 ```
 
-intall pytorch-geometric following the instruction on [pyg installation](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html)
+install pytorch-geometric following the instruction on [pyg installation](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html)
+
+For Torch scatter and sparse, you'll need Microsoft C++ Build tools. Make sure you get both Visual Studio Build Tools 
+and VIsual Studio Community. For Visual Studio Community, make sure you have installed Desktop Development with C++
 
 ```bash
 pip install torch-scatter -f https://pytorch-geometric.com/whl/torch-1.9.0+cu113.html
