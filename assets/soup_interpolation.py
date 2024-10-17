@@ -137,11 +137,14 @@ def greedy_interpolation_soup(state_dicts, model, data, split_idx, evaluator, tr
         current_model = state_dicts_sorted[i]
         print(f"Trying to interpolate model {i} into the soup...")
 
+        # Save current soup validation accuracy for comparison
+        current_soup_val_acc = test_single_state_dict(trainer, soup)
+
         # Interpolate between the current soup and the new model
         best_val_acc, best_alpha, best_sd = interpolate(soup, current_model, model, data, split_idx, evaluator, trainer)
 
-        # If the validation accuracy improves, add the model to the soup
-        if best_val_acc >= test_single_state_dict(trainer, current_model):  # If it improves the soup
+        # If the validation accuracy improves compared to the current soup
+        if best_val_acc > current_soup_val_acc:
             print(f"Model {i} improved the validation accuracy, adding to soup with alpha = {best_alpha}")
             soup = best_sd  # Update soup with the best interpolated state
         else:
