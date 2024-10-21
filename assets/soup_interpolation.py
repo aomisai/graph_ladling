@@ -6,6 +6,31 @@ from options.base_options import BaseOptions
 from trainer import trainer
 
 
+def node_sampling(data, ratio=0.1):
+    """
+    Perform node-wise sampling for GNN training.
+
+    Parameters:
+    - data: The graph data object.
+    - ratio: The sampling ratio (percentage of nodes to sample).
+
+    Returns:
+    - sampled_data: A new data object with sampled nodes and edges.
+    """
+    node_count = data.num_nodes
+    sampled_node_count = int(node_count * ratio)
+
+    # Randomly sample a subset of nodes
+    sampled_nodes = torch.randperm(node_count)[:sampled_node_count]
+
+    # Create a mask for sampled nodes and edges
+    sampled_mask = torch.zeros(node_count, dtype=torch.bool)
+    sampled_mask[sampled_nodes] = True
+
+    # Use the mask to create a new sampled data object
+    sampled_data = data.subgraph(sampled_nodes)
+
+    return sampled_data
 
 # Function to perform interpolation between two models and find the optimal mix
 def interpolate(state1, state2, model, data, split_idx, evaluator, trainer_instance, granularity=10):
@@ -216,9 +241,20 @@ def main():
     split_idx = trainer_instance.split_masks  # These are the train/validation/test splits
     evaluator = trainer_instance.evaluator  # The evaluator object, if applicable
 
-    # Step 3: Perform the greedy interpolation soup procedure
-    print(f"Performing greedy interpolation soup procedure on {len(selected_group)} files...")
-    final_soup = greedy_interpolation_soup(state_dicts, model, data, split_idx, evaluator, trainer_instance)
+    # Step 3: Ask user for the soup method: vanilla or graph sampling
+    soup_choice = input("Enter '1' for vanilla soup interpolation or '2' for graph sampling soup interpolation: ").strip()
+
+    if soup_choice == '1':
+        print(f"Performing vanilla greedy interpolation soup procedure on {len(selected_group)} files...")
+        final_soup = greedy_interpolation_soup(state_dicts, model, data, split_idx, evaluator, trainer_instance)
+    elif soup_choice == '2':
+        print(f"Performing soup interpolation with graph sampling...")
+        # Here, you can apply node sampling or another sampling strategy before performing the soup interpolation
+        sampled_data = node_sampling(data, ratio=0.1)  # Sampling 10% of nodes, can adjust this ratio
+        final_soup = greedy_interpolation_soup(state_dicts, model, sampled_data, split_idx, evaluator, trainer_instance)
+    else:
+        print("Invalid choice. Please enter '1' or '2'.")
+        return
 
     # Step 4: Save the final souped model with the filename including model type and dataset
     model_type = trainer_instance.args.type_model  # Get model type (e.g., 'SGC')
@@ -239,6 +275,7 @@ def main():
 
     soup_val_acc = test_single_state_dict(trainer_instance, final_soup)
     print(f"The validation accuracy for the soups is {soup_val_acc * 100:.2f}")
+
 
 
 if __name__ == "__main__":
