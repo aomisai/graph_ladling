@@ -25,6 +25,7 @@ class BaseOptions:
                 "ogbn-products",
                 "ogbn-papers100M",
                 "ogbn-arxiv",
+                "Cora"
             ],
         )
 
@@ -187,6 +188,11 @@ class BaseOptions:
             args.multi_label = False
             args.num_classes = 172
             args.num_feats = 128
+
+        elif args.dataset == "Cora":
+            args.multi_label = False
+            args.num_classes = 7  # Cora has 7 classes
+            args.num_feats = 1433
 
         return args
 

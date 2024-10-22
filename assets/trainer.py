@@ -7,6 +7,7 @@ from ogb.nodeproppred import Evaluator, PygNodePropPredDataset
 from sklearn.metrics import f1_score
 from torch.profiler import ProfilerActivity, profile
 from torch_geometric.transforms import ToSparseTensor, ToUndirected
+from torch_geometric.datasets import Planetoid
 
 from GraphSampling import *
 from LP.LP_Adj import LabelPropagation_Adj
@@ -52,6 +53,20 @@ def load_data(dataset_name, to_sparse=True):
         # N = data.train_mask.shape[0]
         # data.edge_idx = torch.arange(0, E)
         # data.node_idx = torch.arange(0, N)
+
+    elif dataset_name == "Cora":
+        path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "data", dataset_name)
+        dataset = Planetoid(root=path, name="Cora", transform=ToSparseTensor() if to_sparse else None)
+        processed_dir = dataset.processed_dir
+        data = dataset[0]
+        evaluator = None
+        split_masks = {
+            "train": data.train_mask,
+            "valid": data.val_mask,
+            "test": data.test_mask
+        }
+        x = data.x
+        y = data.y
 
     else:
         raise Exception(f"the dataset of {dataset} has not been implemented")
