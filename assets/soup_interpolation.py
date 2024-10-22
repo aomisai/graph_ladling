@@ -6,16 +6,88 @@ from options.base_options import BaseOptions
 from trainer import trainer
 
 
-def node_sampling(data, ratio=0.1):
+def graph_sampling_soup(state_dicts, model, data, split_idx, evaluator, trainer):
+    print("Sorting models by their validation accuracy...")
+    state_dicts_sorted = test_state_dicts(trainer, state_dicts)
+
+    soup = state_dicts_sorted[0]
+    print(f"Starting soup with the best model (highest validation accuracy).")
+
+    for i in range(1, len(state_dicts_sorted)):
+        current_model = state_dicts_sorted[i]
+        print(f"Trying to interpolate model {i} into the soup...")
+
+        # Sample the graph for this iteration
+        sampled_data = node_sampling(data, ratio=0.1)  # Adjust ratio as needed
+
+        current_soup_val_acc = test_single_state_dict_sampled(trainer, soup, sampled_data)
+
+        best_val_acc, best_alpha, best_sd = interpolate_with_sampling(soup, current_model, model, sampled_data,
+                                                                      split_idx, evaluator, trainer)
+
+        if best_val_acc > current_soup_val_acc:
+            print(f"Model {i} improved the validation accuracy, adding to soup with alpha = {best_alpha}")
+            soup = best_sd
+        else:
+            print(f"Model {i} did not improve the validation accuracy, discarding.")
+
+    return soup
+
+
+def interpolate_with_sampling(state1, state2, model, sampled_data, split_idx, evaluator, trainer_instance,
+                              granularity=10):
+    alpha = np.linspace(0, 1, granularity)
+    max_val, loc = -1, -1
+    best_sd = None
+
+    for i in alpha:
+        sd = {}
+        for k in state1.keys():
+            sd[k] = state1[k].clone() * i + state2[k].clone() * (1 - i)
+        model.load_state_dict(sd)
+
+        # Evaluate on the sampled data
+        valid_acc = test_single_state_dict_sampled(trainer_instance, sd, sampled_data)
+
+        if valid_acc > max_val:
+            max_val = valid_acc
+            loc = i
+            best_sd = sd
+
+    return max_val, loc, best_sd
+
+
+def test_single_state_dict_sampled(trainer_instance, state_dict, sampled_data):
     """
-    Perform node-wise sampling for GNN training.
+    Function to test a single state_dict using the trainer_instance and return its validation accuracy on sampled data.
 
     Parameters:
-    - data: The graph data object.
+    - trainer_instance: An instance of the 'trainer' class (initialized with args, data, and model).
+    - state_dict: A single state dictionary (loaded model weights).
+    - sampled_data: The sampled subgraph data (node features, edge indices, masks).
+
+    Returns:
+    - valid_acc: The validation accuracy of the model with the given state_dict on the sampled data.
+    """
+    # Load the state dictionary into the model
+    trainer_instance.model.load_state_dict(state_dict)
+
+    # Modify test_net function to work with the sampled subgraph
+    _, (_, valid_acc, _) = trainer_instance.test_net(sampled_data=sampled_data)
+
+    return valid_acc
+
+def node_sampling(data, ratio=0.1):
+    """
+    Perform node-wise sampling for GNN training. Ensure that the new subgraph contains
+    sampled nodes and updates the relevant masks.
+
+    Parameters:
+    - data: The full graph data object.
     - ratio: The sampling ratio (percentage of nodes to sample).
 
     Returns:
-    - sampled_data: A new data object with sampled nodes and edges.
+    - sampled_data: A new data object with sampled nodes, edges, and updated masks.
     """
     node_count = data.num_nodes
     sampled_node_count = int(node_count * ratio)
@@ -23,12 +95,19 @@ def node_sampling(data, ratio=0.1):
     # Randomly sample a subset of nodes
     sampled_nodes = torch.randperm(node_count)[:sampled_node_count]
 
-    # Create a mask for sampled nodes and edges
-    sampled_mask = torch.zeros(node_count, dtype=torch.bool)
-    sampled_mask[sampled_nodes] = True
-
-    # Use the mask to create a new sampled data object
+    # Create a new subgraph with the sampled nodes
     sampled_data = data.subgraph(sampled_nodes)
+
+    # Adjust the train/val/test masks to work with the sampled graph
+    # Check for the correct attribute names for masks
+    if hasattr(data, 'train_mask'):
+        sampled_data.train_mask = data.train_mask[sampled_nodes]
+    if hasattr(data, 'val_mask'):
+        sampled_data.val_mask = data.val_mask[sampled_nodes]
+    elif hasattr(data, 'valid_mask'):
+        sampled_data.valid_mask = data.valid_mask[sampled_nodes]
+    if hasattr(data, 'test_mask'):
+        sampled_data.test_mask = data.test_mask[sampled_nodes]
 
     return sampled_data
 
@@ -242,16 +321,14 @@ def main():
     evaluator = trainer_instance.evaluator  # The evaluator object, if applicable
 
     # Step 3: Ask user for the soup method: vanilla or graph sampling
-    soup_choice = input("Enter '1' for vanilla soup interpolation or '2' for graph sampling soup interpolation: ").strip()
+    algo_choice = input("Enter '1' for Greedy Interpolation Soup or '2' for Graph Sampling Soup: ").strip()
 
-    if soup_choice == '1':
-        print(f"Performing vanilla greedy interpolation soup procedure on {len(selected_group)} files...")
+    if algo_choice == '1':
+        print(f"Performing Greedy Interpolation Soup procedure on {len(selected_group)} files...")
         final_soup = greedy_interpolation_soup(state_dicts, model, data, split_idx, evaluator, trainer_instance)
-    elif soup_choice == '2':
-        print(f"Performing soup interpolation with graph sampling...")
-        # Here, you can apply node sampling or another sampling strategy before performing the soup interpolation
-        sampled_data = node_sampling(data, ratio=0.1)  # Sampling 10% of nodes, can adjust this ratio
-        final_soup = greedy_interpolation_soup(state_dicts, model, sampled_data, split_idx, evaluator, trainer_instance)
+    elif algo_choice == '2':
+        print(f"Performing Graph Sampling Soup procedure...")
+        final_soup = graph_sampling_soup(state_dicts, model, data, split_idx, evaluator, trainer_instance)
     else:
         print("Invalid choice. Please enter '1' or '2'.")
         return
