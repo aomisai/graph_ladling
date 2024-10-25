@@ -12,6 +12,7 @@ from torch_geometric.datasets import Planetoid
 from GraphSampling import *
 from LP.LP_Adj import LabelPropagation_Adj
 from Precomputing import *
+from Standard import GCN
 
 
 def load_data(dataset_name, to_sparse=True):
@@ -126,6 +127,8 @@ class trainer(object):
                 self.model = SIGN(args, self.data, self.split_masks["train"], self.processed_dir)
         elif self.type_model == "SGC":
             self.model = SGC(args, self.data, self.split_masks["train"], self.processed_dir)
+        elif self.type_model == "GCN":
+            self.model = GCN(args, self.data)
         elif self.type_model == "SAGN":
             self.model = SAGN(args, self.data, self.split_masks["train"], self.processed_dir)
         elif self.type_model == "EnGCN":
@@ -254,6 +257,7 @@ class trainer(object):
                 "device": self.device,
             }
         elif self.type_model in [
+            "GCN",
             "SIGN",
             "SGC",
             "SAGN",

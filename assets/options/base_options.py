@@ -46,6 +46,7 @@ class BaseOptions:
                 "SAGN",
                 "GAMLP",
                 "EnGCN",
+                "GCN"
             ],
         )
         parser.add_argument("--exp_name", type=str, default="")
