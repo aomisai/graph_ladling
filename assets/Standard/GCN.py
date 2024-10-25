@@ -45,38 +45,39 @@ class GCN(torch.nn.Module):
         model = self.to(device)
         train_mask = input_dict['split_masks']['train']
         self.data = input_dict["data"].to(device)
-        total_correct = 0
-        total_loss = 0
+
+        # Set model to training mode
         model.train()
 
-        for epoch in range(self.args.epochs):
-            optimizer.zero_grad()
-            out = model(self.data)
-            loss = loss_op(out[train_mask], y[train_mask])
-            loss.backward()
-            optimizer.step()
+        optimizer.zero_grad()
+        out = model(self.data)
+        loss = loss_op(out[train_mask], y[train_mask])
+        loss.backward()
+        optimizer.step()
 
-            # Calculate the number of correct predictions
-            pred = out.argmax(dim=1)
-            correct = (pred[train_mask] == y[train_mask]).sum()
+        # Calculate the number of correct predictions
+        pred = out[train_mask].argmax(dim=1)
+        correct = pred.eq(y[train_mask]).sum().item()
 
-            # Accumulate total loss and correct predictions
-            total_loss += loss.item()
-            total_correct += correct
+        # Calculate accuracy for the current epoch
+        train_acc = correct / train_mask.sum().item()
 
-        avg_loss = total_loss / self.args.epochs
-        train_acc = total_correct / train_mask.sum().item()
-
-        return avg_loss, train_acc
+        return loss.item(), train_acc
 
     def inference(self, input_dict):
         x_all = input_dict["x"]
         device = input_dict["device"]
-        y_preds = []
-        loader = DataLoader(range(x_all.size(0)), batch_size=self.args.batch_size)
-        for perm in loader:
+        if self.args.batch_size == 0:
+            # Perform full-batch inference without batching
             y_pred = self.forward(self.data.to(device))
-            y_preds.append(y_pred.cpu())
-        y_preds = torch.cat(y_preds, dim=0)
+            y_preds = y_pred.cpu()
+        else:
+            # Perform batched inference
+            y_preds = []
+            loader = DataLoader(range(x_all.size(0)), batch_size=self.args.batch_size)
+            for perm in loader:
+                y_pred = self.forward(self.data.to(device))
+                y_preds.append(y_pred.cpu())
+            y_preds = torch.cat(y_preds, dim=0)
 
         return y_preds

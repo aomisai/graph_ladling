@@ -105,7 +105,7 @@ def main(args):
 
         ## record training data
         print(
-            "mean and std of test acc: {:.4f} {:.4f} ".format(np.mean(list_test_acc) * 100, np.std(list_test_acc) * 100)
+            "mean and std of test acc: {:.4f} {:.4f} ".format(np.mean(list_test_acc), np.std(list_test_acc))
         )
 
         try:
@@ -124,7 +124,7 @@ def main(args):
 
     print(
         "final mean and std of test acc: ",
-        f"{np.mean(list_test_acc)*100:.4f} $\\pm$ {np.std(list_test_acc)*100:.4f}",
+        f"{np.mean(list_test_acc):.4f} $\\pm$ {np.std(list_test_acc):.4f}",
     )
 
     end_time = time.time()  # Log end time
