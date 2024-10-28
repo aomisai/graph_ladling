@@ -67,7 +67,8 @@ def main(args):
         trnr = trainer(args)
         trnr.mem_speed_bench()
 
-    for seed in range(resume_seed, args.N_exp):
+    seed_pool = random.sample(range(1, 101), args.N_exp)
+    for i, seed in enumerate(seed_pool[resume_seed:]):
         print(f"seed (which_run) = <{seed}>")
 
         args.random_seed = seed
