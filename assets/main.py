@@ -94,11 +94,17 @@ def main(args):
         lr = args.lr if args.lr is not None else 0.001  # Default LR is 0.001
         weight_decay = args.weight_decay if args.weight_decay is not None else 0.0  # Default weight decay is 0.0
 
-        # Save the trained model state for later soup interpolation
-        os.makedirs("trained_soup_ingredients", exist_ok=True)
-        model_save_path = f"trained_soup_ingredients/model_{args.type_model}_seed_{seed}_dataset_{args.dataset}_lr_{lr}_wd_{weight_decay}.pth"
-        torch.save(trnr.model.state_dict(), model_save_path)  # Save model weights
-        print(f"Model state saved at {model_save_path}")
+        if args.save_ing:
+            os.makedirs("trained_soup_ingredients", exist_ok=True)
+
+            # Define the new folder using args.exp_name or fallback to a default
+            exp_folder = args.exp_name if args.exp_name else "default_exp"
+            os.makedirs(f"trained_soup_ingredients/{exp_folder}", exist_ok=True)
+
+            # Save the trained model state for later soup interpolation
+            model_save_path = f"trained_soup_ingredients/{exp_folder}/model_{args.type_model}_seed_{seed}_dataset_{args.dataset}_lr_{lr}_wd_{weight_decay}.pth"
+            torch.save(trnr.model.state_dict(), model_save_path)  # Save model weights
+            print(f"Model state saved at {model_save_path}")
 
         del trnr
         torch.cuda.empty_cache()

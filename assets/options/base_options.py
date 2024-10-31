@@ -51,6 +51,7 @@ class BaseOptions:
         )
         parser.add_argument("--exp_name", type=str, default="")
         parser.add_argument("--N_exp", type=int, default=20)
+        parser.add_argument("--save_ing", action="store_true", default=False)
         parser.add_argument("--resume", action="store_true", default=False)
         parser.add_argument("--cuda", type=bool, default=True, required=False, help="run in cuda mode")
         parser.add_argument("--cuda_num", type=int, default=0, help="GPU number")
